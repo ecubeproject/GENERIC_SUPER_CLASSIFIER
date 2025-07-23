@@ -1,13 +1,94 @@
-# GENERIC_SUPER_CLASSIFIER
-A super powerful generic classifier that allows user to upload dataset, do EDA and print all summary statistics by a button-click. User selects one of 13 algorithms and hyperparameters using UI and train and evaluate model in one click. Bonus: User can plot 7 plots in one click. The application can handle .CSV and .XLSX files.
+# GENERIC_SUPER_CLASSIFIER – Interactive Multi-Model Auto-Classification Tool
 
-The 13 classifiers allowed are RANDOM FOREST , SVC, KNN, XGBOOST, ADABOOST, HISTGRADIENTBOOSTING, LOGISTIC REGRESSION,DECISION TREE, GRADIENT BOOSTING, LIGHTGBM, GAUSSIAN NAIVE BAYES, BERNOULLI NAIVE BAYES, NEURAL NETWORK. Once user chooses a classifier, corresponding hyper-parameters are automatically populated and once user selects his values, the model is trained and evaluation metrics are displayed.
- 
-Finally the user can choose a particular plot from 7 choices and the plot is created by a single button click with helpful information about how to use that plot for interpretation and decsion-making.
+**Organization:** Ecube Analytics  
+**Interface:** Standalone desktop app (standalone executable); cloud-ready (Streamlit/Flask)
 
-The salient features of the application are:
-(1) It can be deployed as a stand alone application on any operating system.
-(2) It can be deployed as a web application on cloud.
-(3) It can handle multi-class classification and binary classification both cases.
-(4) Basic data pre-processing steps like null-imputation, scaling and encoding categotical variables are built-in the model-training pipeline. So, no need of 100% clean data.
-(5) In a single window and by using just a few controls user can view summary statistics, all evaluation metrics and complete classification report and many types of plots.
+---
+
+## Project Overview
+
+GENERIC_SUPER_CLASSIFIER is a versatile machine-learning application designed for users who want to train and evaluate classification models **without writing any code**. With intuitive UI controls, it enables end-to-end workflows from data upload to model selection, training, evaluation, and visualization—all in one place.
+
+**Key Features**:
+- Accepts `.csv` and `.xlsx` datasets of variable size (hardware limitations apply).
+- Automatically performs **Exploratory Data Analysis (EDA)**, including data types, missing values, and summary statistics.
+- User-driven selection of:
+  - Target variable (binary or multi-class classification)
+  - One of **13 classification algorithms**, with dynamic, algorithm-specific hyperparameter controls
+- Model evaluation metrics and classification reports available with a single button click.
+- Includes **7 visualization options**; each plot includes interpretive guidance to aid decision-making.
+- Built-in preprocessing pipeline covering:
+  - Missing-value imputation
+  - Categorical encoding
+  - Feature scaling
+
+Supported classifiers include:
+`Random Forest`, `SVC`, `KNN`, `XGBoost`, `AdaBoost`, `HistGradientBoosting`, `Logistic Regression`, `Decision Tree`, `Gradient Boosting`, `LightGBM`, `Gaussian Naive Bayes`, `Bernoulli Naive Bayes`, and a simple **Neural Network**.
+
+---
+
+##  Outcome & Impact
+
+- Provides a **fully functional GUI** for ML experimentation, model comparison, and visualization.
+- Ideal for:
+  - In-house model benchmarking
+  - Teaching ML concepts in workshops
+  - Rapid prototyping of classification use-cases
+- Portable as:
+  - A standalone executable on any OS
+  - A web app via cloud deployment (e.g., Streamlit, Flask)
+- Saves time and technical overhead by handling preprocessing, training, and plotting in a clean, user-centric interface.
+
+---
+
+## Tech Stack
+
+| Layer               | Technologies Used                             |
+|---------------------|-----------------------------------------------|
+| **Language**         | Python 3.x with Pandas, NumPy                |
+| **ML Framework**     | Scikit-learn pipelines, XGBoost, LightGBM    |
+| **Algorithms**       | 13 classifiers (see Features section)         |
+| **Preprocessing**    | ColumnTransformer, Imputers, Scalers         |
+| **Interface GUI**    | Native Python UI (Tkinter / PySimpleGUI) <br>or Flask/Streamlit for web |
+| **Visualization**    | Matplotlib, Seaborn, SHAP/feature importance |
+| **Data Input**       | `.csv` and `.xlsx` file handling              |
+
+---
+
+## Folder Structure
+
+```plaintext
+.
+├── app.py                    # Main app launcher
+├── gui/                      # GUI-related code and resources
+├── preprocessing/           # Modules for pipelines and data cleaning
+├── models/                   # Saved model objects for reuse
+├── visualizations/           # Plotting modules with guidance text
+├── requirements.txt         # Project dependencies
+└── README.md                 # This documentation
+```
+---
+
+## How to Use?
+1. Clone the repository:    git clone <repo-url>
+2. Install dependencies:    pip install -r requirements.txt
+3. Launch the application:  python app.py
+4. Using the app:
+    - Upload your dataset (.csv or .xlsx)
+    - Select target and features
+    - Choose a classifier and adjust hyperparameters
+    - Run model training and view evaluation results
+    - Generate one of seven plots and read the provided interpretation text
+
+---
+
+## Contributors & Acknowledgments
+ 1. Developer: [Tejas Desai]
+ 2. LinkedIn: [https://www.linkedin.com/in/tejasddesaiindia/]
+
+---
+
+License
+
+This project is released under the MIT License.
+
