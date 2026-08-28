@@ -1,5 +1,6 @@
+import ast
 import tkinter as tk
-from tkinter import ttk, filedialog, Toplevel
+from tkinter import ttk, filedialog, messagebox, Toplevel
 from io import StringIO
 import pandas as pd
 import numpy as np
@@ -59,8 +60,33 @@ def upload_file():
         
         except Exception as e:
             messagebox.showerror("Error", f"Error processing file: {e}")
-    else:
-        messagebox.showinfo("Info", "No file selected.")
+    # If no file was chosen the user simply cancelled the dialog - nothing to do.
+
+
+def print_to_output(message):
+    """Append a line to the results pane (used for non-fatal diagnostics)."""
+    try:
+        results_text_middle.insert(tk.END, f"\n{message}\n")
+        results_text_middle.see(tk.END)
+    except Exception:
+        print(message)
+
+
+def parse_hidden_layer_sizes(text):
+    """Safely parse the MLP 'hidden_layer_sizes' text field.
+
+    Accepts '100', '100,50', '(100,)', '[100, 50]'. Returns a tuple of
+    positive ints. Raises ValueError on anything else (no eval()).
+    """
+    value = ast.literal_eval(text.strip())
+    if isinstance(value, int):
+        value = (value,)
+    if not isinstance(value, (list, tuple)) or not value:
+        raise ValueError("hidden_layer_sizes must be an int or a non-empty tuple/list of ints")
+    sizes = tuple(int(v) for v in value)
+    if any(s <= 0 for s in sizes):
+        raise ValueError("hidden_layer_sizes values must be positive integers")
+    return sizes
 
 def setup_ui(root):
     global plot_dropdown
@@ -183,8 +209,10 @@ def initialize_classifier_params():
         },
         'AdaBoost': {
             'n_estimators': tk.IntVar(value=50),
-            'learning_rate': tk.DoubleVar(value=1.0),
-            'algorithm': tk.StringVar(value='SAMME')
+            'learning_rate': tk.DoubleVar(value=1.0)
+            # 'algorithm' intentionally omitted: deprecated in scikit-learn 1.6
+            # and removed in 1.8. 'SAMME' is the only supported value and is the
+            # default, so passing it explicitly only risks a TypeError.
         },
         'HistGradientBoostingClassifier': {
             'learning_rate': tk.DoubleVar(value=0.1),
@@ -364,7 +392,9 @@ def on_train_clicked():
     
     categorical_transformer = Pipeline(steps=[
         ('imputer', SimpleImputer(strategy='most_frequent')),
-        ('onehot', OneHotEncoder(handle_unknown='ignore'))
+        # sparse_output=False: GaussianNB (and a few plot paths) cannot accept a
+        # sparse matrix, and ColumnTransformer would otherwise return one.
+        ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
     ])
 
     # Combining preprocessors
@@ -380,16 +410,28 @@ def on_train_clicked():
 
     # Use the dynamically updated penalty dropdown
     if selected_classifier == 'Logistic Regression':
-        classifier_parameters['penalty'] = penalty_dropdown.get()
+        penalty = penalty_dropdown.get()
+        # scikit-learn >= 1.2 expects the Python object None, not the string 'none'.
+        classifier_parameters['penalty'] = None if penalty in ('none', 'None', '') else penalty
         classifier_parameters['solver'] = solver_logit_dropdown.get()
         if classifier_parameters['penalty'] == 'elasticnet':
             classifier_parameters['l1_ratio'] = classifier_params[selected_classifier]['l1_ratio'].get()
+        else:
+            # l1_ratio is only valid with penalty='elasticnet'.
+            classifier_parameters.pop('l1_ratio', None)
 
-    # Convert hidden_layer_sizes to tuple for MLPClassifier
+    # Convert hidden_layer_sizes text to a tuple for MLPClassifier (no eval()).
     if selected_classifier == 'Neural Network (MLP)':
-        classifier_parameters['hidden_layer_sizes'] = eval(classifier_parameters['hidden_layer_sizes'])
-        classifier_parameters['solver'] = classifier_parameters.pop('solver')
-        
+        try:
+            classifier_parameters['hidden_layer_sizes'] = parse_hidden_layer_sizes(
+                classifier_parameters['hidden_layer_sizes'])
+        except (ValueError, SyntaxError) as e:
+            messagebox.showerror(
+                "Invalid parameter",
+                f"'Hidden Layer Sizes' must look like  100  or  100,50  or  (100,)\n\n{e}")
+            return
+
+
     # Ensure SVM classifier has probability=True
     if selected_classifier == 'SVM/SVC':
         classifier_parameters['probability'] = True
@@ -469,7 +511,11 @@ def setup_plot_ui(root):
 def on_plot_selected(event):
     global X_test, y_test, clf_pipeline, label_encoder
     plot_type = plot_dropdown.get()
-    
+
+    if clf_pipeline is None or X_test is None or y_test is None:
+        messagebox.showinfo("Train first", "Train and evaluate a model before generating plots.")
+        return
+
     if plot_type == 'ROC Curve':
         plot_roc_curve()
     elif plot_type == 'Precision-Recall Curve':
