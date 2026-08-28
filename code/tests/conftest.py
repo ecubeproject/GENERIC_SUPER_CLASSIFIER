@@ -52,3 +52,11 @@ def diabetes_result(diabetes_df):
     return pipeline.train_and_evaluate(
         diabetes_df, "Outcome", "Logistic Regression",
         pipeline.DEFAULT_PARAMS["Logistic Regression"])
+
+
+@pytest.fixture(scope="session")
+def cv_result(iris_df):
+    """5-fold CV on the multiclass task."""
+    return pipeline.cross_validate_model(
+        iris_df, "species", "Random Forest",
+        pipeline.DEFAULT_PARAMS["Random Forest"], k=5)

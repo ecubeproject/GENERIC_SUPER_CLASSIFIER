@@ -16,11 +16,17 @@ GENERIC_SUPER_CLASSIFIER is a machine-learning application designed for users wh
   - Target variable (binary or multi-class classification)
   - One of **13 classification algorithms**, with dynamic, algorithm-specific hyperparameter controls
 - Model evaluation metrics and classification reports available with a single button click.
+- **Feature-column selection** — exclude ID / leakage columns from training.
+- **Class-imbalance correction** — one toggle applies `class_weight='balanced'` (or a balanced `sample_weight` where the estimator needs it).
+- **K-fold cross-validation** — stratified CV with a mean ± std summary of accuracy, macro precision / recall / F1 and ROC-AUC.
+- **Model leaderboard** — every train / CV run is added to a ranked table so runs can be compared at a glance.
+- **Save / load models and score new data** — persist a trained pipeline to a `.joblib` file and batch-predict on a fresh `.csv` / `.xlsx`.
 - Includes **8 visualization options**; each plot includes interpretive guidance to aid decision-making.
 - Built-in preprocessing pipeline covering:
   - Missing-value imputation
   - Categorical encoding
   - Feature scaling
+  - Datetime-column expansion (year / month / day / day-of-week)
 
 Supported classifiers include:
 `Random Forest`, `SVC`, `KNN`, `XGBoost`, `AdaBoost`, `HistGradientBoosting`, `Logistic Regression`, `Decision Tree`, `Gradient Boosting`, `LightGBM`, `Gaussian Naive Bayes`, `Bernoulli Naive Bayes`, and a simple **Neural Network (MLP)**.
@@ -88,11 +94,25 @@ port without Tkinter.
 3. Launch the application: `python code/Generic_classifier.py`
 4. Using the app:
     - Upload a dataset (`.csv` or `.xlsx`) — try one of the sample files in `datafiles/` to get started quickly
-    - Select target and features
+    - Type the target column; optionally pick a subset of feature columns (leaving all selected uses every column)
+    - Optionally tick **Balance classes** for imbalanced targets
     - Choose a classifier and adjust hyperparameters
-    - Run model training and view evaluation results
+    - **Train and Evaluate** for a hold-out report, or **Cross-validate** (set *k*) for a stratified CV summary — both land on the leaderboard
+    - **Save Model** to write a `.joblib` file; **Load Model** + **Predict on File** to score a new dataset
     - Generate one of the eight plots and read the provided interpretation text
 5. Run the test suite (optional): `python -m pytest`
+
+### Using the engine without the GUI
+
+```python
+from pipeline import train_and_evaluate, cross_validate_model, save_model, load_model, predict_dataframe
+
+result = train_and_evaluate(df, target="churn", classifier_name="XGBoost",
+                            params={"n_estimators": 200}, balance_classes=True)
+cv = cross_validate_model(df, "churn", "XGBoost", {"n_estimators": 200}, k=5)
+save_model(result, "model.joblib")
+preds = predict_dataframe(load_model("model.joblib"), new_df)
+```
 
 ---
 

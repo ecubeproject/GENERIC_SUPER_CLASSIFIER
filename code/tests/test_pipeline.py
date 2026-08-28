@@ -117,6 +117,140 @@ def test_no_usable_features_raises():
         pipeline.train_and_evaluate(df, "target", "KNN", pipeline.DEFAULT_PARAMS["KNN"])
 
 
+# --- feature_columns selection ----------------------------------------
+
+def test_feature_columns_restricts_training(iris_df):
+    cols = ["petal_length", "petal_width"]
+    r = pipeline.train_and_evaluate(
+        iris_df, "species", "Random Forest",
+        pipeline.DEFAULT_PARAMS["Random Forest"], feature_columns=cols)
+    assert r.input_columns == cols
+    assert set(r.numeric_cols) == set(cols)
+    assert r.accuracy > 0.8
+
+
+def test_feature_columns_none_uses_all(iris_df):
+    r = pipeline.train_and_evaluate(
+        iris_df, "species", "KNN", pipeline.DEFAULT_PARAMS["KNN"])
+    assert "species" not in r.input_columns
+    assert len(r.input_columns) == iris_df.shape[1] - 1
+
+
+def test_feature_columns_unknown_raises(iris_df):
+    with pytest.raises(ValueError):
+        pipeline.train_and_evaluate(
+            iris_df, "species", "KNN", pipeline.DEFAULT_PARAMS["KNN"],
+            feature_columns=["petal_width", "nope"])
+
+
+def test_feature_columns_empty_raises(iris_df):
+    with pytest.raises(ValueError):
+        pipeline.train_and_evaluate(
+            iris_df, "species", "KNN", pipeline.DEFAULT_PARAMS["KNN"],
+            feature_columns=[])
+
+
+def test_feature_columns_cannot_include_target(iris_df):
+    with pytest.raises(ValueError):
+        pipeline.train_and_evaluate(
+            iris_df, "species", "KNN", pipeline.DEFAULT_PARAMS["KNN"],
+            feature_columns=["species", "petal_width"])
+
+
+# --- balance_classes --------------------------------------------------
+
+def test_balance_default_is_off(iris_result):
+    assert iris_result.balanced is False
+    assert iris_result.balance_applied == "not requested"
+
+
+def test_balance_uses_class_weight_when_supported(iris_df):
+    r = pipeline.train_and_evaluate(
+        iris_df, "species", "Logistic Regression",
+        pipeline.DEFAULT_PARAMS["Logistic Regression"], balance_classes=True)
+    assert r.balanced is True
+    assert r.balance_applied == "class_weight='balanced'"
+    assert r.pipeline.named_steps["classifier"].get_params()["class_weight"] == "balanced"
+
+
+def test_balance_falls_back_to_sample_weight_for_xgboost(diabetes_df):
+    r = pipeline.train_and_evaluate(
+        diabetes_df, "Outcome", "XGBoost",
+        pipeline.DEFAULT_PARAMS["XGBoost"], balance_classes=True)
+    assert r.balance_applied == "balanced sample_weight"
+    assert r.accuracy > 0.6
+
+
+def test_balance_not_supported_for_knn(iris_df):
+    r = pipeline.train_and_evaluate(
+        iris_df, "species", "KNN", pipeline.DEFAULT_PARAMS["KNN"],
+        balance_classes=True)
+    assert r.balance_applied == "not supported by KNN"
+
+
+def test_balance_improves_minority_recall_on_imbalanced_data():
+    rng = np.random.default_rng(0)
+    n_major, n_minor = 470, 30
+    X_major = rng.normal(0, 1, size=(n_major, 4))
+    X_minor = rng.normal(1.1, 1, size=(n_minor, 4))
+    df = pd.DataFrame(np.vstack([X_major, X_minor]), columns=list("abcd"))
+    df["y"] = [0] * n_major + [1] * n_minor
+    common = dict(df=df, target="y", classifier_name="Logistic Regression",
+                  params=pipeline.DEFAULT_PARAMS["Logistic Regression"])
+    base = pipeline.train_and_evaluate(**common)
+    bal = pipeline.train_and_evaluate(**common, balance_classes=True)
+    minor = 1
+    base_recall = (base.y_pred[base.y_test == minor] == minor).mean()
+    bal_recall = (bal.y_pred[bal.y_test == minor] == minor).mean()
+    assert bal_recall >= base_recall
+
+
+# --- cross_validate_model --------------------------------------------
+
+def test_cv_result_shape_and_metrics(cv_result):
+    assert cv_result.k == 5
+    for m in ("accuracy", "precision_macro", "recall_macro", "f1_macro", "roc_auc"):
+        assert len(cv_result.fold_metrics[m]) == 5
+        assert 0.0 <= cv_result.mean[m] <= 1.0
+        assert cv_result.std[m] >= 0.0
+    assert cv_result.mean["accuracy"] > 0.8
+    assert "Random Forest" in cv_result.summary()
+
+
+def test_cv_binary_target(diabetes_df):
+    r = pipeline.cross_validate_model(
+        diabetes_df, "Outcome", "Logistic Regression",
+        pipeline.DEFAULT_PARAMS["Logistic Regression"], k=4)
+    assert r.k == 4
+    assert r.is_binary
+    assert r.mean["roc_auc"] > 0.6
+
+
+def test_cv_k_capped_to_min_class_count(iris_df):
+    df = iris_df.copy()
+    # leave only 3 rows of one class -> k must drop to 3
+    drop = df.index[df["species"] == "setosa"][3:]
+    df = df.drop(index=drop)
+    r = pipeline.cross_validate_model(
+        df, "species", "KNN", pipeline.DEFAULT_PARAMS["KNN"], k=10)
+    assert r.k == 3
+
+
+def test_cv_rejects_k_below_2(iris_df):
+    with pytest.raises(ValueError):
+        pipeline.cross_validate_model(
+            iris_df, "species", "KNN", pipeline.DEFAULT_PARAMS["KNN"], k=1)
+
+
+def test_cv_respects_feature_columns_and_balance(diabetes_df):
+    r = pipeline.cross_validate_model(
+        diabetes_df, "Outcome", "Logistic Regression",
+        pipeline.DEFAULT_PARAMS["Logistic Regression"],
+        feature_columns=["Glucose", "BMI", "Age"], balance_classes=True, k=3)
+    assert r.balanced is True
+    assert r.balance_applied == "class_weight='balanced'"
+
+
 def test_transformed_X_test_is_dense_2d(iris_result):
     mat = iris_result.transformed_X_test()
     assert isinstance(mat, np.ndarray)
