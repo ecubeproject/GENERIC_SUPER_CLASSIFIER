@@ -2,7 +2,7 @@
 
 **Organization:** Ecube Analytics
 **Interface:** Streamlit web app
-**Live demo:** _deployment in progress — Streamlit Community Cloud_
+**Live demo:** https://appapppy-fyndt7lkblfki6pakz7i6x.streamlit.app/
 
 ---
 
@@ -35,6 +35,53 @@ Supported classifiers include:
 `Random Forest`, `SVC`, `KNN`, `XGBoost`, `AdaBoost`, `HistGradientBoosting`, `Logistic Regression`, `Decision Tree`, `Gradient Boosting`, `LightGBM`, `Gaussian Naive Bayes`, `Bernoulli Naive Bayes`, and a simple **Neural Network (MLP)**.
 
 Available visualizations: ROC Curve, Precision-Recall Curve, PCA Explained Variance, PCA 2D Projection, Cumulative Gains Curve, Calibration Plot, Lift Curve, and Silhouette Analysis.
+
+---
+
+## The eight diagnostic plots
+
+Each plot answers a different question about the trained model. The app shows a
+short version of this text next to every chart.
+
+**ROC Curve** — Plots true-positive rate against false-positive rate at every
+threshold. The area under it (AUC) is a single, threshold-independent score for
+how well the model *ranks* positives above negatives (1.0 perfect, 0.5 random).
+Best for comparing models when the classes are reasonably balanced.
+
+**Precision–Recall Curve** — Traces precision against recall as the threshold
+sweeps; the area is the average precision (AP). This is the more honest view when
+the positive class is rare, because — unlike ROC — it is not flattered by a
+large, easy pool of true negatives.
+
+**PCA Explained Variance** — Shows how much of the total variance in the fully
+preprocessed feature matrix is captured as principal components are added one by
+one. A curve that saturates quickly means the features are highly redundant and
+the problem is effectively low-dimensional.
+
+**PCA 2D Projection** — Projects every row onto the first two principal
+components and colours it by class. A quick eyeball test of separability: cleanly
+grouped colours suggest an easy problem; heavy overlap warns that no classifier
+will do well without better features.
+
+**Cumulative Gains Curve** — For each fraction of the sample worked through in
+descending score order, shows what share of all actual positives has been
+captured. It answers the operational question "if we can only act on the top
+X%, how many real cases do we catch?"
+
+**Calibration Plot** — Bins predictions by their stated probability and plots
+predicted vs. observed frequency. Points on the diagonal mean the probabilities
+are trustworthy (a "0.7" really happens ~70% of the time); bowing above or below
+exposes systematic over- or under-confidence.
+
+**Lift Curve** — Expresses how many times better than random the model is at
+surfacing a class as you widen the fraction of the sample you target. Same
+information as the gains curve, framed the way campaign and risk teams usually
+think about it.
+
+**Silhouette Analysis** — Runs k-means for several cluster counts on the
+preprocessed features and plots the silhouette score for each. It hints at
+whether the data has natural group structure and roughly how many groups —
+useful context alongside the supervised model.
 
 ---
 
@@ -87,8 +134,8 @@ Available visualizations: ROC Curve, Precision-Recall Curve, PCA Explained Varia
 ```
 
 The modelling and plotting code (`data_io`, `profiling`, `pipeline`, `plots`) is
-UI-free and independently importable — usable from a notebook or a future web
-port without Tkinter.
+UI-free and independently importable — usable from a notebook or a script with no
+Streamlit dependency.
 
 ---
 
@@ -109,8 +156,11 @@ port without Tkinter.
 
 ### Deploying to Streamlit Community Cloud
 
-Point a new app at this repo with **main file path** `code/streamlit_app.py`. The
-`.streamlit/config.toml` theme and `requirements.txt` are picked up automatically.
+The [live demo](https://appapppy-fyndt7lkblfki6pakz7i6x.streamlit.app/) runs on
+Streamlit Community Cloud. To deploy your own copy, point a new app at this repo
+with **main file path** `code/streamlit_app.py` and Python **3.11**; the
+`.streamlit/config.toml` theme, `requirements.txt` and `packages.txt` (`libgomp1`,
+needed by LightGBM) are picked up automatically.
 
 ### Using the engine without the GUI
 
@@ -128,7 +178,6 @@ preds = predict_dataframe(load_model("model.joblib"), new_df)
 
 ## Roadmap / Planned Improvements
 
-- Finish the Streamlit Community Cloud deployment and add the live link above.
 - Optional model explainability (permutation importance / SHAP) in the Plots tab.
 - Regression mode for continuous targets (currently classification only).
 
