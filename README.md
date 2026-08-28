@@ -1,13 +1,16 @@
 # GENERIC_SUPER_CLASSIFIER – Interactive Multi-Model Auto-Classification Tool
 
 **Organization:** Ecube Analytics
-**Interface:** Desktop GUI (Python + Tkinter)
+**Interface:** Streamlit web app
+**Live demo:** _deployment in progress — Streamlit Community Cloud_
 
 ---
 
 ## Project Overview
 
 GENERIC_SUPER_CLASSIFIER is a machine-learning application designed for users who want to train and evaluate classification models **without writing any code**. With intuitive UI controls, it enables end-to-end workflows from data upload to model selection, training, evaluation, and visualization — all in one place.
+
+The modelling and plotting engine is a set of **UI-free, independently importable modules** (`data_io`, `profiling`, `pipeline`, `plots`); the Streamlit layer is only widgets and layout, so the same engine runs from a notebook, a script, or the test suite.
 
 **Key Features**:
 - Accepts `.csv` and `.xlsx` datasets of variable size (hardware limitations apply).
@@ -37,7 +40,7 @@ Available visualizations: ROC Curve, Precision-Recall Curve, PCA Explained Varia
 
 ## Outcome & Impact
 
-- Provides a **fully functional GUI** for ML experimentation, model comparison, and visualization.
+- Provides a **fully functional web UI** for ML experimentation, model comparison, and visualization.
 - Ideal for:
   - In-house model benchmarking
   - Teaching ML concepts in workshops
@@ -54,7 +57,7 @@ Available visualizations: ROC Curve, Precision-Recall Curve, PCA Explained Varia
 | **ML Framework**     | Scikit-learn pipelines, XGBoost, LightGBM    |
 | **Algorithms**       | 13 classifiers (see Features section)         |
 | **Preprocessing**    | ColumnTransformer, Imputers, Scalers         |
-| **Interface GUI**    | Tkinter (native Python UI)                    |
+| **Interface**        | Streamlit                                     |
 | **Visualization**    | Matplotlib                                    |
 | **Data Input**       | `.csv` and `.xlsx` file handling              |
 
@@ -65,8 +68,8 @@ Available visualizations: ROC Curve, Precision-Recall Curve, PCA Explained Varia
 ```plaintext
 .
 ├── code/
-│   ├── Generic_classifier.py   # Entry point — launch this to start the GUI
-│   ├── app_tk.py               # Tkinter UI (widgets, layout, event wiring)
+│   ├── streamlit_app.py        # The Streamlit UI (widgets, layout, session state)
+│   ├── Generic_classifier.py   # Legacy launcher — runs `streamlit run streamlit_app.py`
 │   ├── data_io.py              # Load CSV / XLSX
 │   ├── profiling.py            # Text EDA summary of a DataFrame
 │   ├── pipeline.py             # Spec → fitted sklearn pipeline + evaluation (no UI)
@@ -76,6 +79,7 @@ Available visualizations: ROC Curve, Precision-Recall Curve, PCA Explained Varia
 │   ├── IRIS.csv
 │   ├── IRIS.xlsx
 │   └── diabetes.csv
+├── .streamlit/config.toml      # Theme
 ├── pytest.ini
 ├── requirements.txt            # Project dependencies
 ├── LICENSE
@@ -91,16 +95,22 @@ port without Tkinter.
 ## How to Use?
 1. Clone the repository: `git clone <repo-url>`
 2. Install dependencies: `pip install -r requirements.txt`
-3. Launch the application: `python code/Generic_classifier.py`
+3. Launch the application: `streamlit run code/streamlit_app.py` (or `python code/Generic_classifier.py`)
 4. Using the app:
-    - Upload a dataset (`.csv` or `.xlsx`) — try one of the sample files in `datafiles/` to get started quickly
-    - Type the target column; optionally pick a subset of feature columns (leaving all selected uses every column)
-    - Optionally tick **Balance classes** for imbalanced targets
-    - Choose a classifier and adjust hyperparameters
-    - **Train and Evaluate** for a hold-out report, or **Cross-validate** (set *k*) for a stratified CV summary — both land on the leaderboard
-    - **Save Model** to write a `.joblib` file; **Load Model** + **Predict on File** to score a new dataset
-    - Generate one of the eight plots and read the provided interpretation text
+    - In the sidebar, pick a bundled sample dataset or upload your own (`.csv` / `.xlsx`)
+    - Choose the target column; optionally narrow the feature columns (leaving all selected uses every column)
+    - Optionally tick **Balance classes** for imbalanced targets and set the hold-out test size
+    - Choose a classifier and adjust its hyperparameters
+    - **Train & Evaluate** tab: run a hold-out evaluation or a stratified **Cross-validate** (set *k*) — both land on the leaderboard
+    - **Plots** tab: pick one of the eight diagnostics and read its interpretation
+    - **Leaderboard** tab: compare every run, sorted by any metric
+    - **Predict & Model** tab: download the trained model as `.joblib`, re-upload one later, and batch-score a new file
 5. Run the test suite (optional): `python -m pytest`
+
+### Deploying to Streamlit Community Cloud
+
+Point a new app at this repo with **main file path** `code/streamlit_app.py`. The
+`.streamlit/config.toml` theme and `requirements.txt` are picked up automatically.
 
 ### Using the engine without the GUI
 
@@ -118,8 +128,9 @@ preds = predict_dataframe(load_model("model.joblib"), new_df)
 
 ## Roadmap / Planned Improvements
 
-- Polish the Tkinter UI to a more professional look and feel.
-- Deploy a web version on Streamlit Community Cloud (reuses the UI-free modules).
+- Finish the Streamlit Community Cloud deployment and add the live link above.
+- Optional model explainability (permutation importance / SHAP) in the Plots tab.
+- Regression mode for continuous targets (currently classification only).
 
 ---
 
