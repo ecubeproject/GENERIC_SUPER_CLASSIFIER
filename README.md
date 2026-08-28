@@ -59,15 +59,26 @@ Available visualizations: ROC Curve, Precision-Recall Curve, PCA Explained Varia
 ```plaintext
 .
 ├── code/
-│   └── Generic_classifier.py   # Main app — launch this to start the GUI
+│   ├── Generic_classifier.py   # Entry point — launch this to start the GUI
+│   ├── app_tk.py               # Tkinter UI (widgets, layout, event wiring)
+│   ├── data_io.py              # Load CSV / XLSX
+│   ├── profiling.py            # Text EDA summary of a DataFrame
+│   ├── pipeline.py             # Spec → fitted sklearn pipeline + evaluation (no UI)
+│   ├── plots.py                # Diagnostic plots as pure (ax, …) functions (no UI)
+│   └── tests/                  # pytest suite (run: python -m pytest)
 ├── datafiles/                  # Sample datasets to try the app with
 │   ├── IRIS.csv
 │   ├── IRIS.xlsx
 │   └── diabetes.csv
+├── pytest.ini
 ├── requirements.txt            # Project dependencies
 ├── LICENSE
 └── README.md                   # This documentation
 ```
+
+The modelling and plotting code (`data_io`, `profiling`, `pipeline`, `plots`) is
+UI-free and independently importable — usable from a notebook or a future web
+port without Tkinter.
 
 ---
 
@@ -81,14 +92,14 @@ Available visualizations: ROC Curve, Precision-Recall Curve, PCA Explained Varia
     - Choose a classifier and adjust hyperparameters
     - Run model training and view evaluation results
     - Generate one of the eight plots and read the provided interpretation text
+5. Run the test suite (optional): `python -m pytest`
 
 ---
 
 ## Roadmap / Planned Improvements
 
 - Polish the Tkinter UI to a more professional look and feel.
-- General code review and cleanup pass.
-- Deploy a web version on Streamlit Community Cloud.
+- Deploy a web version on Streamlit Community Cloud (reuses the UI-free modules).
 
 ---
 
